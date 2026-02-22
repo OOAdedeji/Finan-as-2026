@@ -38,7 +38,8 @@
             background: var(--bg-card); 
             border-radius: 12px; 
             box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05); 
-            transition: all 0.2s ease; 
+            transition: all 0.2s ease;
+            border: none;
         }
         
         /* Estilos de Edição */
@@ -296,7 +297,7 @@
             container.innerHTML = '';
             categorias.forEach((cat, index) => {
                 const card = document.createElement('div');
-                card.className = `card overflow-hidden flex flex-col ring-1 ring-slate-100 dark:ring-slate-800`;
+                card.className = `card overflow-hidden flex flex-col`;
                 card.innerHTML = `
                     <div class="bg-cat-${index} px-4 py-3 flex justify-between items-center">
                         <span contenteditable="true" class="editable-text text-white font-bold text-xs uppercase tracking-widest label-cat">${cat.label}</span>
@@ -469,3 +470,4 @@
     </script>
 </body>
 </html>
+

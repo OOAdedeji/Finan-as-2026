@@ -96,8 +96,6 @@
             .card { box-shadow: none !important; border: 1px solid #e2e8f0 !important; break-inside: avoid; }
             .max-w-6xl { max-width: 100% !important; width: 100% !important; margin: 0 !important; }
             .input-val { background: transparent !important; color: black !important; border: none !important; width: auto !important; }
-            .show-print-inline { display: inline-block !important; }
-            .show-print-block { display: block !important; }
         }
     </style>
 </head>
@@ -113,20 +111,13 @@
         <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-6">
             <div class="w-full md:w-auto">
                 <div class="flex flex-wrap items-center gap-2 mb-4 no-print">
-                    <select id="select-mes" class="border border-slate-200 rounded-lg px-3 py-1 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer pr-8"></select>
-                    <select id="select-ano" class="border border-slate-200 rounded-lg px-3 py-1 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer pr-8"></select>
+                    <select id="select-mes" onchange="handlePeriodChange()" class="border border-slate-200 rounded-lg px-3 py-1 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer pr-8"></select>
+                    <select id="select-ano" onchange="handlePeriodChange()" class="border border-slate-200 rounded-lg px-3 py-1 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer pr-8"></select>
                     
                     <div class="flex gap-2 ml-auto md:ml-4">
                         <button onclick="triggerPrint()" title="Exportar PDF" class="p-2 hover:bg-slate-100 rounded-lg text-blue-600 transition-colors">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
                         </button>
-                        <button onclick="exportData()" title="Backup JSON" class="p-2 hover:bg-slate-100 rounded-lg text-slate-500 transition-colors border-l pl-4">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                        </button>
-                        <button onclick="document.getElementById('import-file').click()" title="Restaurar JSON" class="p-2 hover:bg-slate-100 rounded-lg text-slate-500 transition-colors">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
-                        </button>
-                        <input type="file" id="import-file" class="hidden" accept=".json" onchange="importData(this)">
                     </div>
                 </div>
                 
@@ -168,10 +159,6 @@
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6" id="tables-container"></div>
-        
-        <p class="hidden show-print-block mt-8 text-[10px] text-slate-400 text-center italic border-t pt-4">
-            Relatório gerado em <span id="print-data-emissao"></span>. Dados armazenados localmente.
-        </p>
     </div>
 
     <script>
@@ -183,22 +170,15 @@
                 { id: 'table-entradas', label: 'Receitas', items: [{ desc: 'Salário', val: 0 }] },
                 { id: 'table-necessidades', label: 'Fixos (50%)', items: [{ desc: 'Habitação', val: 0 }] },
                 { id: 'table-desejos', label: 'Variáveis (30%)', items: [{ desc: 'Lazer', val: 0 }] },
-                { id: 'table-economias', label: 'Investir (20%)', items: [{ desc: 'Poupanca', val: 0 }] }
+                { id: 'table-economias', label: 'Investir (20%)', items: [{ desc: 'Poupança', val: 0 }] }
             ]
         };
 
         function toggleTheme() {
             document.documentElement.classList.toggle('dark');
             const isDark = document.documentElement.classList.contains('dark');
-            document.getElementById('sun-icon').classList.toggle('hidden', !isDark);
-            document.getElementById('moon-icon').classList.toggle('hidden', isDark);
             localStorage.setItem('finance_theme', isDark ? 'dark' : 'light');
-            
-            if (chartBarras) {
-                chartBarras.options.scales.x.ticks.color = isDark ? '#94a3b8' : '#64748b';
-                chartBarras.data.datasets[0].backgroundColor = isDark ? '#334155' : '#f1f5f9';
-                chartBarras.update('none');
-            }
+            updateChartColors();
         }
 
         function getStorageKey() {
@@ -207,46 +187,13 @@
             return `finance_app_v1_${ano}_${mes}`;
         }
 
-        function triggerPrint() {
-            const m = document.getElementById('select-mes');
-            const mesText = m.options[m.selectedIndex].text;
-            const anoVal = document.getElementById('select-ano').value;
-            document.getElementById('periodo-badge').innerText = `${mesText} / ${anoVal}`;
-            document.getElementById('print-data-emissao').innerText = new Date().toLocaleString('pt-PT');
-            window.print();
+        // Função crucial: Chamada quando o mês ou ano muda
+        function handlePeriodChange() {
+            loadData();
         }
 
         function formatCurrency(value) {
             return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
-        }
-
-        function exportData() {
-            const allData = {};
-            for (let i = 0; i < localStorage.length; i++) {
-                const key = localStorage.key(i);
-                if (key && key.startsWith('finance_app_v1_')) {
-                    allData[key] = JSON.parse(localStorage.getItem(key));
-                }
-            }
-            const blob = new Blob([JSON.stringify(allData, null, 2)], { type: 'application/json' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `backup_financeiro_${new Date().toISOString().split('T')[0]}.json`;
-            a.click();
-        }
-
-        function importData(input) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                try {
-                    const imported = JSON.parse(e.target.result);
-                    Object.keys(imported).forEach(key => localStorage.setItem(key, JSON.stringify(imported[key])));
-                    loadData();
-                    alert("Dados importados com sucesso!");
-                } catch(err) { alert("Ficheiro inválido."); }
-            };
-            reader.readAsText(input.files[0]);
         }
 
         function saveData() {
@@ -270,9 +217,11 @@
 
         function loadData() {
             const saved = localStorage.getItem(getStorageKey());
-            const data = saved ? JSON.parse(saved) : defaultData;
+            // Se não houver dados para o mês, carrega o modelo padrão (zerado)
+            const data = saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(defaultData));
             document.getElementById('display-titulo').innerText = data.titulo || "Meu Orçamento";
             renderTables(data.categorias);
+            calculate();
         }
 
         function showIndicator() {
@@ -301,18 +250,16 @@
                     <div class="p-3 flex-1"><table class="w-full text-xs border-collapse"><tbody id="${cat.id}">
                         ${cat.items.map(i => createRowHTML(i.desc, i.val)).join('')}
                     </tbody></table></div>
-                    <!-- AJUSTE: Removido 'border-t border-slate-100' desta div de rodapé -->
                     <div class="bg-cat-${index}-light p-3 text-right">
                         <div class="text-[10px] text-cat-${index} uppercase font-bold">Total</div>
                         <div id="total-${cat.id}" class="font-black text-sm">R$ 0,00</div>
                     </div>`;
                 container.appendChild(card);
             });
-            calculate();
         }
 
         function createRowHTML(desc, val) {
-            return `<tr class="group last:border-0">
+            return `<tr class="group">
                 <td class="no-print"><button onclick="removeRow(this)" class="btn-del">×</button></td>
                 <td class="w-full"><input class="input-desc" value="${desc}" placeholder="Descrição..."></td>
                 <td><input class="input-val val" type="number" step="0.01" value="${val}" onfocus="this.select()"></td>
@@ -322,7 +269,6 @@
         function addRow(id) {
             const tb = document.getElementById(id);
             const tr = document.createElement('tr');
-            tr.className = "group last:border-0";
             tr.innerHTML = createRowHTML("Novo Item", 0);
             tb.appendChild(tr);
             calculate(); saveData();
@@ -358,7 +304,6 @@
             const perc = e > 0 ? (totalG / e) * 100 : 0;
             document.getElementById('resumo-percentual').innerText = Math.round(perc) + '%';
             document.getElementById('progress-bar').style.width = Math.min(perc, 100) + '%';
-            document.getElementById('progress-bar').className = perc > 100 ? 'bg-rose-500 h-full' : 'bg-blue-500 h-full';
 
             if(chartRosca) {
                 chartRosca.data.datasets[0].data = [n, d, i];
@@ -371,19 +316,9 @@
         }
 
         function initCharts() {
-            const isDark = document.documentElement.classList.contains('dark');
-            
             chartRosca = new Chart(document.getElementById('chartRosca'), {
                 type: 'doughnut',
-                data: { 
-                    labels: ['Fixos', 'Desejos', 'Investimento'], 
-                    datasets: [{ 
-                        data: [0,0,0], 
-                        backgroundColor: ['#16a34a', '#eab308', '#ea580c'], 
-                        borderWidth: 0,
-                        hoverOffset: 4
-                    }] 
-                },
+                data: { labels: ['Fixos', 'Desejos', 'Investimento'], datasets: [{ data: [0,0,0], backgroundColor: ['#16a34a', '#eab308', '#ea580c'], borderWidth: 0 }] },
                 options: { cutout: '75%', plugins: { legend: { display: false } }, animation: false }
             });
             
@@ -392,31 +327,31 @@
                 data: { 
                     labels: ['50% Fixos', '30% Desejos', '20% Inv.'], 
                     datasets: [
-                        { label: 'Ideal', data: [0,0,0], backgroundColor: isDark ? '#334155' : '#f1f5f9', borderRadius: 6 },
+                        { label: 'Ideal', data: [0,0,0], backgroundColor: '#f1f5f9', borderRadius: 6 },
                         { label: 'Real', data: [0,0,0], backgroundColor: ['#16a34a', '#eab308', '#ea580c'], borderRadius: 6 }
                     ]
                 },
                 options: { 
                     maintainAspectRatio: false, 
-                    scales: { 
-                        y: { display: false }, 
-                        x: { 
-                            grid: { display: false }, 
-                            ticks: { font: { size: 9 }, color: isDark ? '#94a3b8' : '#64748b' } 
-                        } 
-                    }, 
+                    scales: { y: { display: false }, x: { grid: { display: false }, ticks: { font: { size: 9 } } } }, 
                     plugins: { legend: { display: false } }, 
                     animation: false 
                 }
             });
+            updateChartColors();
+        }
+
+        function updateChartColors() {
+            const isDark = document.documentElement.classList.contains('dark');
+            if (chartBarras) {
+                chartBarras.data.datasets[0].backgroundColor = isDark ? '#334155' : '#f1f5f9';
+                chartBarras.options.scales.x.ticks.color = isDark ? '#94a3b8' : '#64748b';
+                chartBarras.update('none');
+            }
         }
 
         window.onload = () => {
-            if (localStorage.getItem('finance_theme') === 'dark') {
-                document.documentElement.classList.add('dark');
-                document.getElementById('sun-icon').classList.remove('hidden');
-                document.getElementById('moon-icon').classList.add('hidden');
-            }
+            if (localStorage.getItem('finance_theme') === 'dark') document.documentElement.classList.add('dark');
 
             const meses = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
             const mS = document.getElementById('select-mes');
@@ -429,7 +364,6 @@
                 opt.innerText = m;
                 mS.appendChild(opt);
             });
-            
             for(let a = 2024; a <= 2030; a++) {
                 const opt = document.createElement('option');
                 opt.value = a; opt.innerText = a;
@@ -442,6 +376,7 @@
             initCharts();
             loadData();
 
+            // Autosave em qualquer alteração
             document.addEventListener('input', (e) => {
                 if (e.target.classList.contains('input-val') || 
                     e.target.classList.contains('input-desc') || 
@@ -452,6 +387,8 @@
                 }
             });
         };
+
+        function triggerPrint() { window.print(); }
     </script>
 </body>
 </html>

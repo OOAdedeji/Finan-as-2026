@@ -39,9 +39,9 @@
             border-radius: 12px; 
             box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05); 
             transition: all 0.2s ease;
+            border: none !important;
         }
         
-        /* Estilos de Edição */
         .editable-text { border: 1px solid transparent; padding: 2px 4px; border-radius: 4px; transition: all 0.2s; cursor: pointer; }
         .editable-text:hover { background-color: rgba(0,0,0,0.05); border-color: var(--border-color); }
         .editable-text:focus { outline: none; background-color: var(--bg-card); border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1); }
@@ -70,13 +70,11 @@
             background-size: 1em; 
         }
 
-        /* Cores de Categoria */
         .bg-cat-0 { background-color: #475569; } .text-cat-0 { color: #475569; } .bg-cat-0-light { background-color: rgba(71, 85, 105, 0.1); }
         .bg-cat-1 { background-color: #16a34a; } .text-cat-1 { color: #16a34a; } .bg-cat-1-light { background-color: rgba(22, 163, 74, 0.1); }
         .bg-cat-2 { background-color: #eab308; } .text-cat-2 { color: #eab308; } .bg-cat-2-light { background-color: rgba(234, 179, 8, 0.1); }
         .bg-cat-3 { background-color: #ea580c; } .text-cat-3 { color: #ea580c; } .bg-cat-3-light { background-color: rgba(234, 88, 12, 0.1); }
 
-        /* Botão Dark Mode */
         #theme-toggle {
             position: fixed;
             top: 20px;
@@ -112,7 +110,6 @@
     <div id="save-indicator">Alterações guardadas!</div>
 
     <div class="max-w-6xl mx-auto">
-        <!-- Cabeçalho -->
         <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-6">
             <div class="w-full md:w-auto">
                 <div class="flex flex-wrap items-center gap-2 mb-4 no-print">
@@ -146,7 +143,6 @@
             </div>
         </div>
 
-        <!-- Gráficos -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
             <div class="card p-6 flex flex-col items-center justify-center">
                 <h3 class="text-xs font-bold text-slate-400 uppercase mb-4 text-center">Distribuição Real</h3>
@@ -171,7 +167,6 @@
             </div>
         </div>
 
-        <!-- Tabelas de Categorias -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6" id="tables-container"></div>
         
         <p class="hidden show-print-block mt-8 text-[10px] text-slate-400 text-center italic border-t pt-4">
@@ -199,7 +194,6 @@
             document.getElementById('moon-icon').classList.toggle('hidden', isDark);
             localStorage.setItem('finance_theme', isDark ? 'dark' : 'light');
             
-            // Atualizar cores do gráfico de barras para o modo escuro
             if (chartBarras) {
                 chartBarras.options.scales.x.ticks.color = isDark ? '#94a3b8' : '#64748b';
                 chartBarras.data.datasets[0].backgroundColor = isDark ? '#334155' : '#f1f5f9';
@@ -296,7 +290,7 @@
             container.innerHTML = '';
             categorias.forEach((cat, index) => {
                 const card = document.createElement('div');
-                card.className = `card overflow-hidden flex flex-col ring-1 ring-slate-100 dark:ring-slate-800`;
+                card.className = `card overflow-hidden flex flex-col`;
                 card.innerHTML = `
                     <div class="bg-cat-${index} px-4 py-3 flex justify-between items-center">
                         <span contenteditable="true" class="editable-text text-white font-bold text-xs uppercase tracking-widest label-cat">${cat.label}</span>
@@ -307,7 +301,8 @@
                     <div class="p-3 flex-1"><table class="w-full text-xs border-collapse"><tbody id="${cat.id}">
                         ${cat.items.map(i => createRowHTML(i.desc, i.val)).join('')}
                     </tbody></table></div>
-                    <div class="bg-cat-${index}-light p-3 text-right border-t border-slate-100 dark:border-slate-800">
+                    <!-- AJUSTE: Removido 'border-t border-slate-100' desta div de rodapé -->
+                    <div class="bg-cat-${index}-light p-3 text-right">
                         <div class="text-[10px] text-cat-${index} uppercase font-bold">Total</div>
                         <div id="total-${cat.id}" class="font-black text-sm">R$ 0,00</div>
                     </div>`;
@@ -317,7 +312,7 @@
         }
 
         function createRowHTML(desc, val) {
-            return `<tr class="group border-b border-slate-50 dark:border-slate-800 last:border-0">
+            return `<tr class="group last:border-0">
                 <td class="no-print"><button onclick="removeRow(this)" class="btn-del">×</button></td>
                 <td class="w-full"><input class="input-desc" value="${desc}" placeholder="Descrição..."></td>
                 <td><input class="input-val val" type="number" step="0.01" value="${val}" onfocus="this.select()"></td>
@@ -327,7 +322,7 @@
         function addRow(id) {
             const tb = document.getElementById(id);
             const tr = document.createElement('tr');
-            tr.className = "group border-b border-slate-50 dark:border-slate-800 last:border-0";
+            tr.className = "group last:border-0";
             tr.innerHTML = createRowHTML("Novo Item", 0);
             tb.appendChild(tr);
             calculate(); saveData();
@@ -349,7 +344,6 @@
             const totalG = n + d + i;
             const saldo = e - totalG;
 
-            // Atualizar Totais nas Tabelas
             const ids = ['table-entradas','table-necessidades','table-desejos','table-economias'];
             const vals = [e, n, d, i];
             ids.forEach((id, idx) => {
@@ -357,7 +351,6 @@
                 if(el) el.innerText = formatCurrency(vals[idx]);
             });
 
-            // Atualizar Cabeçalho e Resumo
             document.getElementById('resumo-entradas').innerText = formatCurrency(e);
             document.getElementById('resumo-gastos').innerText = formatCurrency(totalG);
             document.getElementById('saldo-total').innerText = formatCurrency(saldo);
@@ -367,7 +360,6 @@
             document.getElementById('progress-bar').style.width = Math.min(perc, 100) + '%';
             document.getElementById('progress-bar').className = perc > 100 ? 'bg-rose-500 h-full' : 'bg-blue-500 h-full';
 
-            // Atualizar Gráficos
             if(chartRosca) {
                 chartRosca.data.datasets[0].data = [n, d, i];
                 chartRosca.update('none');
@@ -419,9 +411,7 @@
             });
         }
 
-        // Configuração Inicial
         window.onload = () => {
-            // Verificar tema salvo
             if (localStorage.getItem('finance_theme') === 'dark') {
                 document.documentElement.classList.add('dark');
                 document.getElementById('sun-icon').classList.remove('hidden');
@@ -452,10 +442,6 @@
             initCharts();
             loadData();
 
-            // Listeners de Eventos
-            mS.addEventListener('change', loadData);
-            aS.addEventListener('change', loadData);
-            
             document.addEventListener('input', (e) => {
                 if (e.target.classList.contains('input-val') || 
                     e.target.classList.contains('input-desc') || 
@@ -469,6 +455,3 @@
     </script>
 </body>
 </html>
-
-
-
